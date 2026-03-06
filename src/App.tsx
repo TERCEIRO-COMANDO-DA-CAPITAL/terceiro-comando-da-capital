@@ -60,7 +60,14 @@ interface Stats {
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>({
+    id: "system-user",
+    name: "System Admin",
+    picture: "https://cdn.discordapp.com/embed/avatars/0.png",
+    email: "admin@system.local",
+    connections: [],
+    guilds: []
+  });
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -71,15 +78,17 @@ export default function App() {
     expiredKeys: 0,
     uniqueUsers: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchUser = async () => {
     try {
       const res = await fetch("/api/auth/me");
-      const data = await res.json();
-      setUser(data);
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      }
     } catch (err) {
-      setUser(null);
+      console.error("Fetch user failed, using default");
     }
   };
 
@@ -113,9 +122,9 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      setIsLoading(true);
       await fetchUser();
-      setIsLoading(false);
+      await fetchKeys();
+      await fetchStats();
     };
     init();
   }, []);
@@ -196,11 +205,11 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
         <motion.div 
           animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-12 h-12 bg-white rounded-full blur-xl"
+          className="w-12 h-12 bg-[#5865F2] rounded-full blur-xl"
         />
       </div>
     );
@@ -208,61 +217,51 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex items-center justify-center p-6 font-sans overflow-hidden relative">
-        <Toaster position="top-center" />
+      <div className="min-h-screen bg-transparent text-white flex items-center justify-center font-sans selection:bg-white/10 overflow-hidden relative">
+        <div className="atmosphere" />
         
-        {/* Star Wars / Space Accents */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="glow-nebula top-[-10%] left-[-10%] bg-[#5865F2]" />
-          <div className="glow-nebula bottom-[-10%] right-[-10%] bg-[#FF0080]" />
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30" />
-        </div>
-
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9, y: 40 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-xl relative z-10"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
+          className="relative z-10 w-full max-w-md px-10"
         >
-          <div className="text-center space-y-16">
-            <motion.div 
+          <div className="text-center space-y-12">
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col items-center gap-10"
+              transition={{ delay: 0.2 }}
+              className="space-y-4"
             >
-              <div className="w-32 h-32 bg-white rounded-[48px] flex items-center justify-center shadow-[0_0_60px_rgba(88,101,242,0.3)] relative group">
-                <ShieldCheck size={64} className="text-black transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-white rounded-[48px] animate-ping opacity-10 scale-110" />
-              </div>
-              <div className="space-y-4">
-                <h1 className="text-7xl font-black tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">TCC Panel</h1>
-                <p className="text-[#5865F2] text-[11px] font-black uppercase tracking-[0.6em] drop-shadow-[0_0_8px_rgba(88,101,242,0.3)]">Centralized Access Protocol</p>
-              </div>
+              <h1 className="text-7xl font-black tracking-tighter uppercase leading-none">
+                System<br />
+                <span className="text-white/40">Access</span>
+              </h1>
+              <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.6em]">Terminal Connection Required</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="space-y-10"
+              transition={{ delay: 0.4 }}
+              className="space-y-8"
             >
               <button 
                 onClick={handleLogin}
-                className="discord-btn w-full py-8 rounded-[40px] flex items-center justify-center gap-5 transition-all duration-700 group active:scale-95"
+                className="btn-text-gradient w-full py-8 rounded-none flex items-center justify-center gap-6 group"
               >
-                <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 flex items-center justify-center text-white/60 group-hover:text-white transition-colors">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
                     <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                   </svg>
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-[0.5em]">Initialize Session</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.8em] text-white/80 group-hover:text-white transition-colors">Initialize Session</span>
               </button>
               
-              <div className="flex items-center justify-center gap-10">
-                <p className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.4em]">v4.2.0 Stable</p>
-                <div className="w-1 h-1 bg-zinc-800 rounded-full" />
-                <p className="text-[9px] text-zinc-500 font-black uppercase tracking-[0.4em]">Encrypted Tunnel</p>
+              <div className="flex items-center justify-center gap-10 opacity-20">
+                <p className="text-[8px] font-black uppercase tracking-[0.4em]">v4.2.0 Stable</p>
+                <div className="w-1 h-1 bg-white rounded-full" />
+                <p className="text-[8px] font-black uppercase tracking-[0.4em]">Encrypted Tunnel</p>
               </div>
             </motion.div>
           </div>
@@ -272,51 +271,43 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-white flex font-sans selection:bg-[#5865F2]/30 overflow-hidden relative">
-      {/* Background Nebula */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-[-1]">
-        <div className="glow-nebula top-[-20%] left-[-10%] bg-[#5865F2]/10" />
-        <div className="glow-nebula bottom-[-20%] right-[-10%] bg-[#FF0080]/10" />
-      </div>
+    <div className="min-h-screen bg-transparent text-white flex font-sans selection:bg-white/10 overflow-hidden relative">
+      <div className="atmosphere" />
 
       <Toaster position="top-right" toastOptions={{
         style: {
-          background: 'rgba(5, 5, 5, 0.8)',
-          backdropFilter: 'blur(20px)',
+          background: 'rgba(255, 255, 255, 0.02)',
+          backdropFilter: 'blur(40px)',
           color: '#ffffff',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-          borderRadius: '20px',
-          fontSize: '11px',
+          border: 'none',
+          borderRadius: '0px',
+          fontSize: '10px',
           fontWeight: '900',
           textTransform: 'uppercase',
-          letterSpacing: '0.2em',
-          padding: '16px 24px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+          letterSpacing: '0.4em',
+          padding: '24px 32px',
+          boxShadow: 'none'
         }
       }} />
 
       {/* Sidebar Desktop */}
       <aside className={cn(
-        "hidden lg:flex flex-col bg-black/40 backdrop-blur-3xl transition-all duration-700 ease-in-out sticky top-0 h-screen border-r border-white/5",
-        isSidebarMinimized ? "w-24" : "w-80"
+        "hidden lg:flex flex-col glass-surface transition-all duration-1000 ease-[0.19, 1, 0.22, 1] sticky top-0 h-screen",
+        isSidebarMinimized ? "w-20" : "w-72"
       )}>
         <div className="p-10 flex items-center justify-between">
-          <div className={cn("flex items-center gap-5", isSidebarMinimized && "hidden")}>
-            <div className="w-12 h-12 bg-white rounded-[18px] flex items-center justify-center shadow-2xl shadow-white/5 group relative">
-              <ShieldCheck className="w-7 h-7 text-black z-10" />
-              <div className="absolute inset-0 bg-[#5865F2] rounded-[18px] blur-lg opacity-0 group-hover:opacity-40 transition-opacity" />
-            </div>
-            <span className="font-black tracking-tighter text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">TCC</span>
+          <div className={cn("flex items-center gap-4", isSidebarMinimized && "hidden")}>
+            <span className="font-black tracking-tighter text-3xl">TCC</span>
           </div>
           <button 
             onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
-            className="p-3.5 hover:bg-white/5 rounded-2xl transition-all text-zinc-700 hover:text-white"
+            className="p-2 hover:bg-white/5 rounded-none transition-all text-zinc-600 hover:text-white"
           >
-            {isSidebarMinimized ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
+            {isSidebarMinimized ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
         </div>
 
-        <nav className="flex-1 px-8 space-y-4 mt-8">
+        <nav className="flex-1 px-6 space-y-2 mt-12">
           <SidebarItem 
             icon={<LayoutDashboard size={24} />} 
             label="Dashboard" 
@@ -347,25 +338,20 @@ export default function App() {
           />
         </nav>
 
-        <div className="p-8 mt-auto">
+        <div className="p-6 mt-auto">
           <div className={cn(
-            "p-5 rounded-[32px] bg-white/[0.03] border border-white/5 backdrop-blur-xl transition-all duration-500 hover:bg-white/[0.05]",
-            isSidebarMinimized ? "items-center justify-center flex" : "flex items-center gap-5"
+            "p-4 rounded-none bg-white/[0.02] transition-all duration-500 hover:bg-white/[0.04]",
+            isSidebarMinimized ? "items-center justify-center flex" : "flex items-center gap-4"
           )}>
             <div className="relative">
-              <img src={user.picture} alt={user.name} className="w-12 h-12 rounded-full grayscale hover:grayscale-0 transition-all duration-700 border border-white/10" />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#5865F2] rounded-full border-4 border-black flex items-center justify-center shadow-[0_0_10px_rgba(88,101,242,0.5)]">
-                <div className="w-1.5 h-1.5 bg-white rounded-full" />
-              </div>
+              <img src={user.picture} alt={user.name} className="w-10 h-10 rounded-none grayscale hover:grayscale-0 transition-all duration-1000" />
             </div>
             {!isSidebarMinimized && (
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-black truncate tracking-tight uppercase text-white/90">{user.name}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <button onClick={handleLogout} className="text-[10px] text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5 font-black uppercase tracking-widest">
-                    <LogOut size={12} /> Sair
-                  </button>
-                </div>
+                <p className="text-[10px] font-black truncate tracking-tight uppercase text-white/80">{user.name}</p>
+                <button onClick={handleLogout} className="text-[8px] text-zinc-600 hover:text-white transition-colors font-black uppercase tracking-widest mt-1">
+                  Disconnect
+                </button>
               </div>
             )}
           </div>
@@ -446,33 +432,33 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 flex flex-col min-w-0 bg-transparent overflow-y-auto custom-scrollbar">
-        <header className="h-28 flex items-center justify-between px-10 lg:px-20 bg-black/20 backdrop-blur-3xl sticky top-0 z-40 border-b border-white/5">
+      <main className="flex-1 flex flex-col min-w-0 bg-transparent overflow-y-auto">
+        <header className="h-24 flex items-center justify-between px-10 lg:px-20 bg-white/[0.01] backdrop-blur-3xl sticky top-0 z-40">
           <div className="flex items-center gap-8">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-4 hover:bg-white/5 rounded-3xl transition-colors"
+              className="lg:hidden p-4 hover:bg-white/5 transition-colors"
             >
-              <Menu size={28} />
+              <Menu size={24} />
             </button>
-            <h2 className="text-[11px] font-black text-[#5865F2] uppercase tracking-[0.6em] drop-shadow-[0_0_8px_rgba(88,101,242,0.3)]">
+            <h2 className="text-[9px] font-black text-white/40 uppercase tracking-[0.8em]">
               {activeView}
             </h2>
           </div>
 
           <div className="flex items-center gap-8">
-            <div className="hidden md:flex items-center bg-white/[0.03] border border-white/5 rounded-[24px] px-8 py-4 focus-within:ring-2 ring-[#5865F2]/20 transition-all duration-500">
-              <Search size={20} className="text-zinc-600" />
+            <div className="hidden md:flex items-center bg-white/[0.02] px-6 py-3 transition-all duration-500">
+              <Search size={16} className="text-zinc-700" />
               <input 
                 type="text" 
-                placeholder="Search database..." 
-                className="bg-transparent border-none focus:ring-0 text-[11px] ml-5 w-80 placeholder:text-zinc-800 font-black uppercase tracking-[0.2em]"
+                placeholder="Search..." 
+                className="bg-transparent border-none focus:ring-0 text-[10px] ml-4 w-64 placeholder:text-zinc-800 font-black uppercase tracking-[0.4em]"
               />
             </div>
           </div>
         </header>
 
-        <div className="p-10 lg:p-20 max-w-7xl mx-auto w-full animate-fade-in">
+        <div className="p-10 lg:p-20 max-w-7xl mx-auto w-full animate-reveal">
           <AnimatePresence mode="wait">
             {activeView === "dashboard" && (
               <motion.div
@@ -493,21 +479,21 @@ export default function App() {
                   <div className="lg:col-span-2 space-y-10">
                     <div className="flex items-center justify-between">
                       <h3 className="text-2xl font-black tracking-tighter uppercase">Recent Activity</h3>
-                      <button className="text-[10px] font-black text-[#5865F2] uppercase tracking-[0.4em] hover:text-white transition-colors">Full Logs</button>
+                      <button className="btn-text-gradient px-6 py-3 text-[9px] font-black uppercase tracking-[0.4em] text-white/40 hover:text-white transition-colors">Full Logs</button>
                     </div>
                     <div className="space-y-5">
                       {keys.slice(0, 5).map((key) => (
-                        <div key={key.id} className="flex items-center gap-8 p-8 rounded-[40px] glass-gradient hover:bg-white/[0.05] transition-all duration-500 group">
-                          <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-zinc-600 group-hover:text-[#5865F2] transition-all duration-700 group-hover:shadow-[0_0_20px_rgba(88,101,242,0.2)]">
-                            <Gamepad2 size={32} />
+                        <div key={key.id} className="flex items-center gap-8 p-10 rounded-none glass-card group transition-all duration-1000">
+                          <div className="w-16 h-16 rounded-none bg-white/5 flex items-center justify-center text-zinc-700 group-hover:text-white transition-all duration-1000">
+                            <Gamepad2 size={28} />
                           </div>
                           <div className="flex-1">
-                            <p className="text-base font-black tracking-tight uppercase text-white/90">{key.userName}</p>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-black mt-2">{key.game} • {key.scriptName}</p>
+                            <p className="text-sm font-black tracking-tight uppercase text-white/90">{key.userName}</p>
+                            <p className="text-[9px] text-zinc-600 uppercase tracking-[0.4em] font-black mt-2">{key.game} • {key.scriptName}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[11px] font-mono text-zinc-600 group-hover:text-zinc-400 transition-colors">{key.key.substring(0, 12)}...</p>
-                            <p className="text-[10px] text-zinc-700 font-black uppercase mt-2">{new Date(key.createdAt).toLocaleDateString()}</p>
+                            <p className="text-[10px] font-mono text-zinc-700 group-hover:text-zinc-500 transition-colors">{key.key.substring(0, 12)}...</p>
+                            <p className="text-[9px] text-zinc-800 font-black uppercase mt-2">{new Date(key.createdAt).toLocaleDateString()}</p>
                           </div>
                         </div>
                       ))}
@@ -521,7 +507,7 @@ export default function App() {
 
                   <div className="space-y-10">
                     <h3 className="text-2xl font-black tracking-tighter uppercase">Distribution</h3>
-                    <div className="p-12 rounded-[48px] glass space-y-12 border border-white/5">
+                    <div className="p-12 rounded-none glass-card space-y-12">
                       <GameProgress label="Roblox" percentage={65} />
                       <GameProgress label="Minecraft" percentage={45} />
                       <GameProgress label="GTA V" percentage={30} />
@@ -548,16 +534,16 @@ export default function App() {
                   <KeyGeneratorModal onKeyGenerated={() => { fetchKeys(); fetchStats(); }} />
                 </div>
 
-                <div className="bg-white/[0.02] border border-white/5 backdrop-blur-3xl rounded-[48px] overflow-hidden">
+                <div className="glass-surface overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-white/[0.03]">
-                          <th className="px-12 py-8 text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em]">User</th>
-                          <th className="px-12 py-8 text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em]">Game / Script</th>
-                          <th className="px-12 py-8 text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em]">Access Key</th>
-                          <th className="px-12 py-8 text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em]">Status</th>
-                          <th className="px-12 py-8 text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em] text-right">Action</th>
+                        <tr className="bg-white/[0.01]">
+                          <th className="px-12 py-8 text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">User</th>
+                          <th className="px-12 py-8 text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">Game / Script</th>
+                          <th className="px-12 py-8 text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">Access Key</th>
+                          <th className="px-12 py-8 text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">Status</th>
+                          <th className="px-12 py-8 text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] text-right">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.03]">
@@ -565,21 +551,21 @@ export default function App() {
                           <tr key={key.id} className="hover:bg-white/[0.02] transition-all duration-500 group">
                             <td className="px-12 py-10">
                               <div className="flex items-center gap-5">
-                                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-zinc-600 group-hover:text-[#5865F2] transition-colors">
-                                  <Users size={24} />
+                                <div className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center text-zinc-700 group-hover:text-white transition-colors">
+                                  <Users size={20} />
                                 </div>
-                                <span className="text-base font-black tracking-tight uppercase text-white/90">{key.userName}</span>
+                                <span className="text-sm font-black tracking-tight uppercase text-white/90">{key.userName}</span>
                               </div>
                             </td>
                             <td className="px-12 py-10">
                               <div className="space-y-2">
-                                <p className="text-base font-black tracking-tight uppercase text-white/80">{key.game}</p>
-                                <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">{key.scriptName}</p>
+                                <p className="text-sm font-black tracking-tight uppercase text-white/80">{key.game}</p>
+                                <p className="text-[9px] text-zinc-700 font-black uppercase tracking-[0.4em]">{key.scriptName}</p>
                               </div>
                             </td>
                             <td className="px-12 py-10">
                               <div className="flex items-center gap-5">
-                                <code className="text-xs font-mono bg-black/40 px-5 py-3 rounded-2xl text-zinc-500 border border-white/5">
+                                <code className="text-[10px] font-mono bg-black/40 px-5 py-3 rounded-none text-zinc-600">
                                   {key.key}
                                 </code>
                                 <button 
@@ -592,8 +578,8 @@ export default function App() {
                             </td>
                             <td className="px-12 py-10">
                               <span className={cn(
-                                "inline-flex items-center px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em]",
-                                key.status === "active" ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                                "inline-flex items-center px-4 py-1 rounded-none text-[8px] font-black uppercase tracking-[0.4em]",
+                                key.status === "active" ? "bg-emerald-500/5 text-emerald-500" : "bg-rose-500/5 text-rose-500"
                               )}>
                                 {key.status}
                               </span>
@@ -601,9 +587,9 @@ export default function App() {
                             <td className="px-12 py-10 text-right">
                               <button 
                                 onClick={() => handleDeleteKey(key.id)}
-                                className="p-4 text-zinc-800 hover:text-rose-500 hover:bg-rose-500/10 rounded-3xl transition-all opacity-0 group-hover:opacity-100"
+                                className="p-4 text-zinc-900 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"
                               >
-                                <Trash2 size={24} />
+                                <Trash2 size={20} />
                               </button>
                             </td>
                           </tr>
@@ -644,7 +630,7 @@ export default function App() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       {user?.connections?.map((conn: any) => (
-                        <div key={conn.id} className="p-6 rounded-[32px] bg-white/[0.02] border border-white/5 flex items-center gap-5 group hover:bg-white/[0.05] transition-all duration-500">
+                        <div key={conn.id} className="p-8 rounded-none glass-card flex items-center gap-5 group transition-all duration-1000">
                           <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
                             <img 
                               src={`https://cdn.discordapp.com/role-icons/1/${conn.type}.png`} 
@@ -678,12 +664,12 @@ export default function App() {
                     </div>
                     <div className="space-y-4 max-h-[700px] overflow-y-auto pr-4 custom-scrollbar">
                       {user?.guilds?.map((guild: any) => (
-                        <div key={guild.id} className="p-6 rounded-[32px] bg-white/[0.02] border border-white/5 flex items-center gap-6 hover:bg-white/[0.05] transition-all duration-500 group">
+                        <div key={guild.id} className="p-8 rounded-none glass-card flex items-center gap-6 group transition-all duration-1000">
                           {guild.icon ? (
                             <img 
                               src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`} 
                               alt={guild.name}
-                              className="w-14 h-14 rounded-2xl grayscale group-hover:grayscale-0 transition-all duration-700 border border-white/10"
+                              className="w-14 h-14 rounded-none grayscale group-hover:grayscale-0 transition-all duration-1000"
                             />
                           ) : (
                             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-xs font-black text-zinc-600 group-hover:text-white transition-colors">
@@ -693,7 +679,7 @@ export default function App() {
                           <div className="flex-1 overflow-hidden">
                             <p className="text-sm font-black truncate tracking-tight uppercase text-white/90">{guild.name}</p>
                             <div className="flex items-center gap-3 mt-1.5">
-                              {guild.owner && <span className="text-[8px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full uppercase font-black tracking-widest border border-amber-500/20">Master</span>}
+                              {guild.owner && <span className="text-[7px] bg-amber-500/5 text-amber-500 px-2 py-0.5 rounded-none uppercase font-black tracking-widest">Master</span>}
                               <span className="text-[8px] text-zinc-600 font-black uppercase tracking-widest">ID: {guild.id}</span>
                             </div>
                           </div>
@@ -732,18 +718,18 @@ export default function App() {
 
                     <div className="space-y-10">
                       <h4 className="text-xl font-black tracking-tighter uppercase">API Integration</h4>
-                      <div className="p-12 rounded-[48px] bg-white/[0.02] border border-white/5 backdrop-blur-3xl space-y-10">
+                      <div className="p-12 rounded-none glass-surface space-y-10">
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] ml-4">Webhook Endpoint</label>
+                          <label className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] ml-2">Webhook Endpoint</label>
                           <div className="flex gap-5">
                             <input 
                               type="text" 
                               readOnly
                               value="https://api.tcc.panel/v1/webhook"
-                              className="flex-1 bg-black/40 border border-white/5 rounded-[32px] px-8 py-6 text-sm font-black text-zinc-500 uppercase tracking-widest"
+                              className="flex-1 bg-black/40 rounded-none px-8 py-6 text-[10px] font-black text-zinc-600 uppercase tracking-widest border-none outline-none"
                             />
-                            <button className="p-6 bg-white/5 hover:bg-white/10 rounded-[32px] transition-all border border-white/5">
-                              <Copy size={20} />
+                            <button className="p-6 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
+                              <Copy size={18} />
                             </button>
                           </div>
                         </div>
@@ -753,17 +739,17 @@ export default function App() {
 
                   <div className="space-y-10">
                     <h4 className="text-xl font-black tracking-tighter uppercase">System Health</h4>
-                    <div className="p-12 rounded-[48px] bg-white/[0.02] border border-white/5 backdrop-blur-3xl space-y-12">
+                    <div className="p-12 rounded-none glass-surface space-y-12">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em]">Redis Latency</span>
-                        <span className="text-emerald-500 font-black text-xs uppercase tracking-widest drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]">12ms</span>
+                        <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">Redis Latency</span>
+                        <span className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">12ms</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em]">Uptime</span>
-                        <span className="text-white font-black text-xs uppercase tracking-widest">99.9%</span>
+                        <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em]">Uptime</span>
+                        <span className="text-white/60 font-black text-[10px] uppercase tracking-widest">99.9%</span>
                       </div>
-                      <div className="pt-8 border-t border-white/[0.05]">
-                        <button className="w-full py-6 rounded-[32px] bg-rose-500/5 text-rose-500 text-[10px] font-black uppercase tracking-[0.4em] hover:bg-rose-500/10 transition-all border border-rose-500/10">
+                      <div className="pt-8 opacity-20">
+                        <button className="btn-text-gradient w-full py-6 text-[9px] font-black uppercase tracking-[0.5em] text-rose-500">
                           Emergency Shutdown
                         </button>
                       </div>
@@ -782,21 +768,21 @@ export default function App() {
 function SettingToggle({ label, description, enabled }: { label: string, description: string, enabled?: boolean }) {
   const [isOn, setIsOn] = useState(enabled);
   return (
-    <div className="flex items-center justify-between p-8 rounded-[32px] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] transition-all duration-500 group">
+    <div className="flex items-center justify-between p-10 rounded-none glass-card group transition-all duration-1000">
       <div className="space-y-2">
         <p className="text-base font-black tracking-tight uppercase text-white/90">{label}</p>
-        <p className="text-[10px] text-zinc-600 font-black uppercase tracking-[0.3em]">{description}</p>
+        <p className="text-[9px] text-zinc-700 font-black uppercase tracking-[0.4em]">{description}</p>
       </div>
       <button 
         onClick={() => setIsOn(!isOn)}
         className={cn(
-          "w-16 h-8 rounded-full transition-all duration-500 relative",
-          isOn ? "bg-[#5865F2] shadow-[0_0_15px_rgba(88,101,242,0.5)]" : "bg-zinc-900"
+          "w-12 h-6 rounded-none transition-all duration-1000 relative",
+          isOn ? "bg-white/20" : "bg-white/[0.02]"
         )}
       >
         <div className={cn(
-          "absolute top-1 w-6 h-6 rounded-full transition-all duration-500",
-          isOn ? "left-9 bg-white" : "left-1 bg-zinc-800"
+          "absolute top-1 w-4 h-4 rounded-none transition-all duration-1000",
+          isOn ? "left-7 bg-white" : "left-1 bg-zinc-800"
         )} />
       </button>
     </div>
@@ -808,26 +794,20 @@ function SidebarItem({ icon, label, active, minimized, onClick }: { icon: React.
     <button 
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-6 px-6 py-5 rounded-[32px] text-sm font-black transition-all duration-700 relative group",
+        "w-full flex items-center gap-5 px-5 py-4 text-sm font-black transition-all duration-1000 relative group",
         active 
-          ? "text-white bg-white/[0.05] shadow-2xl shadow-black border border-white/5" 
-          : "text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.02]"
+          ? "text-white bg-white/[0.04]" 
+          : "text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.01]"
       )}
     >
-      <div className={cn("transition-all duration-700", active && "scale-125 text-[#5865F2] drop-shadow-[0_0_10px_rgba(88,101,242,0.5)]")}>
+      <div className={cn("transition-all duration-1000", active && "scale-110 text-white")}>
         {icon}
       </div>
-      {!minimized && <span className="uppercase tracking-[0.3em] text-[10px] font-black">{label}</span>}
+      {!minimized && <span className="uppercase tracking-[0.4em] text-[9px] font-black">{label}</span>}
       {minimized && (
-        <div className="absolute left-full ml-8 px-5 py-3 bg-black/80 backdrop-blur-xl text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 translate-x-[-20px] group-hover:translate-x-0 z-[100] shadow-2xl border border-white/5">
+        <div className="absolute left-full ml-6 px-4 py-2 bg-black/90 backdrop-blur-3xl text-white text-[8px] font-black uppercase tracking-[0.4em] opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-500 translate-x-[-10px] group-hover:translate-x-0 z-[100]">
           {label}
         </div>
-      )}
-      {active && !minimized && (
-        <motion.div 
-          layoutId="sidebar-active"
-          className="absolute left-0 w-2 h-10 bg-[#5865F2] rounded-full shadow-[0_0_15px_rgba(88,101,242,0.8)]"
-        />
       )}
     </button>
   );
@@ -835,29 +815,29 @@ function SidebarItem({ icon, label, active, minimized, onClick }: { icon: React.
 
 function StatCard({ label, value, icon }: { label: string, value: number | string, icon: React.ReactNode }) {
   return (
-    <div className="bg-white/[0.02] border border-white/5 backdrop-blur-3xl p-12 rounded-[48px] hover:bg-white/[0.05] transition-all duration-700 group relative overflow-hidden">
-      <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.1] transition-all duration-1000 scale-150 group-hover:text-[#5865F2]">
+    <div className="glass-card p-12 rounded-none hover:bg-white/[0.03] transition-all duration-1000 group relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-all duration-1000 scale-150">
         {icon}
       </div>
-      <p className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.5em] mb-8">{label}</p>
-      <h4 className="text-6xl font-black tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40">{value}</h4>
+      <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.6em] mb-8">{label}</p>
+      <h4 className="text-7xl font-black tracking-tighter uppercase text-white/90">{value}</h4>
     </div>
   );
 }
 
 function GameProgress({ label, percentage }: { label: string, percentage: number }) {
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-[0.4em]">
-        <span className="text-zinc-500">{label}</span>
-        <span className="text-[#5865F2]">{percentage}%</span>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.4em]">
+        <span className="text-zinc-600">{label}</span>
+        <span className="text-white/40">{percentage}%</span>
       </div>
-      <div className="h-2 w-full bg-white/[0.03] rounded-full overflow-hidden border border-white/5">
+      <div className="h-[1px] w-full bg-white/[0.05] overflow-hidden">
         <motion.div 
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 2.5, ease: "circOut" }}
-          className="h-full rounded-full bg-gradient-to-r from-[#5865F2] to-[#FF0080] shadow-[0_0_15px_rgba(88,101,242,0.5)]" 
+          transition={{ duration: 3, ease: [0.19, 1, 0.22, 1] }}
+          className="h-full bg-white/20" 
         />
       </div>
     </div>
@@ -905,7 +885,7 @@ function KeyGeneratorModal({ onKeyGenerated }: { onKeyGenerated: () => void }) {
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className="bg-white/5 hover:bg-white/10 text-white px-8 py-4 rounded-[24px] text-[11px] font-black uppercase tracking-[0.3em] transition-all duration-500 active:scale-95 shadow-2xl border border-white/5"
+        className="btn-text-gradient px-10 py-5 text-[10px] font-black uppercase tracking-[0.5em] transition-all duration-500 active:scale-95"
       >
         Authorize Access
       </button>
@@ -921,73 +901,71 @@ function KeyGeneratorModal({ onKeyGenerated }: { onKeyGenerated: () => void }) {
               className="absolute inset-0 bg-black/60 backdrop-blur-3xl"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              initial={{ opacity: 0, scale: 0.98, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              className="relative w-full max-w-lg bg-black/80 backdrop-blur-3xl border border-white/10 rounded-[64px] shadow-[0_0_100px_rgba(0,0,0,1)] p-16 overflow-hidden"
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              className="relative w-full max-w-lg glass-surface p-16 overflow-hidden"
             >
               <div className="space-y-12">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-3xl font-black tracking-tighter uppercase text-white/90">Authorize</h3>
-                    <p className="text-[10px] text-[#5865F2] font-black uppercase tracking-[0.4em] mt-2">New System Entry</p>
+                    <h3 className="text-4xl font-black tracking-tighter uppercase text-white/90">Authorize</h3>
+                    <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.6em] mt-2">New System Entry</p>
                   </div>
-                  <button onClick={() => setIsOpen(false)} className="p-4 hover:bg-white/5 rounded-3xl transition-colors">
-                    <X size={24} />
+                  <button onClick={() => setIsOpen(false)} className="p-4 hover:bg-white/5 transition-colors">
+                    <X size={20} />
                   </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-10">
                   <div className="space-y-8">
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] ml-4">Subject Identity</label>
+                      <label className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] ml-2">Subject Identity</label>
                       <input 
                         type="text" 
                         required
                         value={formData.userName}
                         onChange={(e) => setFormData({...formData, userName: e.target.value})}
-                        className="w-full bg-white/[0.03] border border-white/5 rounded-[32px] px-8 py-6 text-sm font-black focus:ring-2 ring-[#5865F2]/20 transition-all duration-500 placeholder:text-zinc-800 uppercase tracking-widest text-white"
+                        className="w-full bg-white/[0.02] px-8 py-6 text-sm font-black focus:bg-white/[0.04] transition-all duration-500 placeholder:text-zinc-800 uppercase tracking-widest text-white border-none outline-none"
                         placeholder="Discord ID / Name"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] ml-4">Target</label>
-                        <div className="relative">
-                          <select 
-                            value={formData.game}
-                            onChange={(e) => setFormData({...formData, game: e.target.value})}
-                            className="w-full bg-white/[0.03] border border-white/5 rounded-[32px] px-8 py-6 text-sm font-black focus:ring-2 ring-[#5865F2]/20 transition-all duration-500 appearance-none uppercase tracking-widest text-white"
-                          >
-                            <option>Roblox</option>
-                            <option>Minecraft</option>
-                            <option>GTA V</option>
-                            <option>Valorant</option>
-                          </select>
-                        </div>
+                        <label className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] ml-2">Target</label>
+                        <select 
+                          value={formData.game}
+                          onChange={(e) => setFormData({...formData, game: e.target.value})}
+                          className="w-full bg-white/[0.02] px-8 py-6 text-sm font-black transition-all duration-500 appearance-none uppercase tracking-widest text-white border-none outline-none"
+                        >
+                          <option>Roblox</option>
+                          <option>Minecraft</option>
+                          <option>GTA V</option>
+                          <option>Valorant</option>
+                        </select>
                       </div>
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] ml-4">Module</label>
+                        <label className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] ml-2">Module</label>
                         <input 
                           type="text" 
                           required
                           value={formData.scriptName}
                           onChange={(e) => setFormData({...formData, scriptName: e.target.value})}
-                          className="w-full bg-white/[0.03] border border-white/5 rounded-[32px] px-8 py-6 text-sm font-black focus:ring-2 ring-[#5865F2]/20 transition-all duration-500 placeholder:text-zinc-800 uppercase tracking-widest text-white"
+                          className="w-full bg-white/[0.02] px-8 py-6 text-sm font-black transition-all duration-500 placeholder:text-zinc-800 uppercase tracking-widest text-white border-none outline-none"
                           placeholder="Script Name"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] ml-4">Expiration Protocol</label>
+                      <label className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.6em] ml-2">Expiration Protocol</label>
                       <input 
                         type="date" 
                         required
                         value={formData.expiresAt}
                         onChange={(e) => setFormData({...formData, expiresAt: e.target.value})}
-                        className="w-full bg-white/[0.03] border border-white/5 rounded-[32px] px-8 py-6 text-sm font-black focus:ring-2 ring-[#5865F2]/20 transition-all duration-500 uppercase tracking-widest text-white"
+                        className="w-full bg-white/[0.02] px-8 py-6 text-sm font-black transition-all duration-500 uppercase tracking-widest text-white border-none outline-none"
                       />
                     </div>
                   </div>
@@ -995,7 +973,7 @@ function KeyGeneratorModal({ onKeyGenerated }: { onKeyGenerated: () => void }) {
                   <button 
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-white text-black py-6 rounded-[32px] font-black text-[11px] uppercase tracking-[0.5em] hover:bg-zinc-200 transition-all duration-500 active:scale-95 disabled:opacity-50 shadow-2xl shadow-white/5"
+                    className="w-full bg-white text-black py-8 font-black text-[11px] uppercase tracking-[0.8em] hover:bg-zinc-200 transition-all duration-500 active:scale-95 disabled:opacity-50"
                   >
                     {isSubmitting ? "Processing..." : "Commit Authorization"}
                   </button>

@@ -29,6 +29,24 @@ function getDailySecret() {
   return `${masterSecret}-${date}`;
 }
 
+// Helper to get all keys matching a pattern using SCAN (safer than KEYS)
+async function getAllKeys(pattern: string) {
+  let cursor = "0";
+  let allKeys: string[] = [];
+  try {
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, { match: pattern, count: 100 });
+      cursor = nextCursor;
+      allKeys.push(...keys);
+    } while (cursor !== "0");
+  } catch (error) {
+    console.error(`Error scanning keys for pattern ${pattern}:`, error);
+    // Fallback or rethrow
+    throw error;
+  }
+  return allKeys;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -148,23 +166,18 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  // Protected API Middleware
+  // Protected API Middleware - DISABLED for direct access
   const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // Automatically provide a system user if not present
     if (!req.session?.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      req.session = req.session || {};
+      req.session.user = {
+        id: "system-user",
+        name: "System Admin",
+        picture: "https://cdn.discordapp.com/embed/avatars/0.png",
+        email: "admin@system.local"
+      };
     }
-    
-    // Refresh user profile TTL on every interaction (1 week of inactivity)
-    try {
-      const userId = req.session.user.id;
-      const userProfile = await redis.get(`user_profile:${userId}`);
-      if (userProfile) {
-        await redis.set(`user_profile:${userId}`, userProfile, { ex: 7 * 24 * 60 * 60 });
-      }
-    } catch (err) {
-      console.error("Error refreshing user TTL:", err);
-    }
-    
     next();
   };
 
@@ -172,7 +185,7 @@ async function startServer() {
   app.get("/api/keys", requireAuth, async (req, res) => {
     try {
       // Use scan to find all script keys
-      const keys = await redis.keys("script_key:*");
+      const keys = await getAllKeys("script_key:*");
       if (!keys || keys.length === 0) return res.json([]);
       
       const keysData = await Promise.all(
@@ -240,7 +253,7 @@ async function startServer() {
 
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      const keys = await redis.keys("script_key:*");
+      const keys = await getAllKeys("script_key:*");
       const keysData = await Promise.all(
         keys.map(async (key) => await redis.get(key))
       );
