@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import cookieSession from "cookie-session";
 import axios from "axios";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -87,18 +88,17 @@ async function startServer() {
         headers: { Authorization: `Bearer ${access_token}` },
       });
 
-      // Get connections
-      const connectionsResponse = await axios.get("https://discord.com/api/users/@me/connections", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      // Get guilds
-      const guildsResponse = await axios.get("https://discord.com/api/users/@me/guilds", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
       const discordUser = userResponse.data;
       
+      // Store user in Redis with 7-day expiration (1 week)
+      // If they don't login for 1 week, they lose access/data
+      const userProfile = {
+        id: discordUser.id,
+        username: discordUser.username,
+        lastLogin: new Date().toISOString(),
+      };
+      await redis.set(`user_profile:${discordUser.id}`, userProfile, { ex: 7 * 24 * 60 * 60 });
+
       if (req.session) {
         req.session.user = {
           id: discordUser.id,
@@ -107,8 +107,6 @@ async function startServer() {
           picture: discordUser.avatar 
             ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
             : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordUser.discriminator || "0") % 5}.png`,
-          connections: connectionsResponse.data,
-          guilds: guildsResponse.data,
           accessToken: access_token,
         };
       }
@@ -144,23 +142,44 @@ async function startServer() {
   });
 
   // Protected API Middleware
-  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const requireAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!req.session?.user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
+    
+    // Refresh user profile TTL on every interaction (1 week of inactivity)
+    try {
+      const userId = req.session.user.id;
+      const userProfile = await redis.get(`user_profile:${userId}`);
+      if (userProfile) {
+        await redis.set(`user_profile:${userId}`, userProfile, { ex: 7 * 24 * 60 * 60 });
+      }
+    } catch (err) {
+      console.error("Error refreshing user TTL:", err);
+    }
+    
     next();
   };
 
   // API Routes
   app.get("/api/keys", requireAuth, async (req, res) => {
     try {
-      const keys = await redis.hgetall("script_keys");
-      if (!keys) return res.json([]);
-      const keysList = Object.entries(keys).map(([id, data]) => ({
-        id,
-        ...(data as object),
-      }));
-      res.json(keysList);
+      // Use scan to find all script keys
+      const keys = await redis.keys("script_key:*");
+      if (!keys || keys.length === 0) return res.json([]);
+      
+      const keysData = await Promise.all(
+        keys.map(async (key) => {
+          const data = await redis.get(key);
+          if (data) {
+            // Refresh key TTL on use (1 week of inactivity)
+            await redis.set(key, data, { ex: 7 * 24 * 60 * 60 });
+          }
+          return { id: key.replace("script_key:", ""), ...(data as object) };
+        })
+      );
+      
+      res.json(keysData);
     } catch (error) {
       console.error("Error fetching keys:", error);
       res.status(500).json({ error: "Failed to fetch keys" });
@@ -171,7 +190,13 @@ async function startServer() {
     try {
       const { userName, game, scriptName, expiresAt } = req.body;
       const id = uuidv4();
-      const key = `SK-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const userId = req.session?.user.id;
+      
+      // Daily unique key generation based on user ID and date (deterministic for the day)
+      const date = new Date().toISOString().split("T")[0];
+      const userHash = crypto.createHash('sha256').update(`${userId}-${date}-tcc-key-salt`).digest('hex').substring(0, 6).toUpperCase();
+      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const key = `SK-${date.replace(/-/g, "")}-${userHash}-${randomPart}`;
       
       const newKey = {
         key,
@@ -181,9 +206,13 @@ async function startServer() {
         expiresAt,
         createdAt: new Date().toISOString(),
         status: "active",
+        ownerId: userId,
       };
 
-      await redis.hset("script_keys", { [id]: newKey });
+      // Set key with 7-day expiration (1 week)
+      // If not used/accessed, it will be deleted automatically
+      await redis.set(`script_key:${id}`, newKey, { ex: 7 * 24 * 60 * 60 });
+      
       res.json({ id, ...newKey });
     } catch (error) {
       console.error("Error creating key:", error);
@@ -194,7 +223,7 @@ async function startServer() {
   app.delete("/api/keys/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
-      await redis.hdel("script_keys", id);
+      await redis.del(`script_key:${id}`);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting key:", error);
@@ -204,8 +233,11 @@ async function startServer() {
 
   app.get("/api/stats", requireAuth, async (req, res) => {
     try {
-      const keys = await redis.hgetall("script_keys");
-      const keysList = keys ? Object.values(keys) : [];
+      const keys = await redis.keys("script_key:*");
+      const keysData = await Promise.all(
+        keys.map(async (key) => await redis.get(key))
+      );
+      const keysList = keysData.filter(k => k !== null) as any[];
       
       const stats = {
         totalKeys: keysList.length,
