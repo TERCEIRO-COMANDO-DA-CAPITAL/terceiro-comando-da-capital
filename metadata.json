@@ -1,5 +1,5 @@
 {
-  "name": "ScriptKey Manager",
-  "description": "A professional management panel for generating and managing paid script access keys with Discord OAuth integration and real-time database.",
+  "name": "Terceiro Comando da Capital",
+  "description": "Painel de controle oficial do TCC com integração Discord OAuth2 e gerenciamento de chaves em tempo real.",
   "requestFramePermissions": []
 }

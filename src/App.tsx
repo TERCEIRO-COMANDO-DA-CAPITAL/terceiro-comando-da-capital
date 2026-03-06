@@ -37,6 +37,8 @@ interface User {
   email: string;
   name: string;
   picture: string;
+  connections?: any[];
+  guilds?: any[];
 }
 
 interface ScriptKey {
@@ -199,8 +201,8 @@ export default function App() {
             <ShieldCheck className="w-10 h-10 text-black" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight">ScriptKey Manager</h1>
-            <p className="text-zinc-500 text-sm">Faça login para gerenciar seus scripts com segurança.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Terceiro Comando da Capital</h1>
+            <p className="text-zinc-500 text-sm">Faça login para acessar o painel de controle do TCC.</p>
           </div>
           <button 
             onClick={handleLogin}
@@ -211,7 +213,7 @@ export default function App() {
             </svg>
             Entrar com Discord
           </button>
-          <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Powered by ScriptKey Engine</p>
+          <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Powered by TCC System</p>
         </motion.div>
       </div>
     );
@@ -238,7 +240,7 @@ export default function App() {
             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
               <ShieldCheck className="w-5 h-5 text-black" />
             </div>
-            <span className="font-bold tracking-tight">ScriptKey</span>
+            <span className="font-bold tracking-tight">TCC Panel</span>
           </div>
           <button 
             onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
@@ -331,7 +333,7 @@ export default function App() {
                   <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                     <ShieldCheck className="w-5 h-5 text-black" />
                   </div>
-                  <span className="font-bold tracking-tight">ScriptKey</span>
+                  <span className="font-bold tracking-tight">TCC Panel</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 hover:bg-white/5 rounded-lg transition-colors">
                   <X size={20} />
@@ -571,16 +573,100 @@ export default function App() {
               </motion.div>
             )}
 
-            {(activeView === "users" || activeView === "settings") && (
+            {activeView === "users" && (
               <motion.div
-                key="placeholder"
+                key="users"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-12"
+              >
+                <div>
+                  <h3 className="text-2xl font-bold tracking-tight">Discord Profile</h3>
+                  <p className="text-zinc-600 text-sm">Informações detalhadas da sua conta Discord vinculada.</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  {/* Connections */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-bold tracking-tight">Conexões</h4>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user?.connections?.length || 0} Vinculadas</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {user?.connections?.map((conn: any) => (
+                        <div key={conn.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-4 group hover:border-white/10 transition-all">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                            <img 
+                              src={`https://cdn.discordapp.com/role-icons/1/${conn.type}.png`} 
+                              alt={conn.type}
+                              className="w-6 h-6 opacity-50 group-hover:opacity-100 transition-opacity"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "https://cdn.discordapp.com/embed/avatars/0.png";
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <p className="text-xs font-bold capitalize">{conn.type}</p>
+                            <p className="text-[10px] text-zinc-500 truncate">{conn.name}</p>
+                          </div>
+                          {conn.verified && <CheckCircle2 size={14} className="text-emerald-500" />}
+                        </div>
+                      ))}
+                      {(!user?.connections || user.connections.length === 0) && (
+                        <div className="col-span-full py-12 text-center text-zinc-700 font-bold uppercase tracking-widest text-[10px]">
+                          Nenhuma conexão encontrada
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Guilds */}
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-lg font-bold tracking-tight">Servidores</h4>
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{user?.guilds?.length || 0} Participando</span>
+                    </div>
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                      {user?.guilds?.map((guild: any) => (
+                        <div key={guild.id} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-4 hover:border-white/10 transition-all">
+                          {guild.icon ? (
+                            <img 
+                              src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`} 
+                              alt={guild.name}
+                              className="w-10 h-10 rounded-xl"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xs font-bold text-zinc-500">
+                              {guild.name.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 overflow-hidden">
+                            <p className="text-sm font-bold truncate">{guild.name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {guild.owner && <span className="text-[8px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">Dono</span>}
+                              <span className="text-[8px] text-zinc-600 font-bold uppercase tracking-tighter">ID: {guild.id}</span>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-zinc-700" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeView === "settings" && (
+              <motion.div
+                key="settings"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center py-32 text-zinc-800"
               >
                 <Settings size={80} className="mb-6 opacity-10" />
-                <h3 className="text-xl font-bold uppercase tracking-[0.2em]">In Development</h3>
-                <p className="text-sm font-medium mt-2">This module will be available in the next update.</p>
+                <h3 className="text-xl font-bold uppercase tracking-[0.2em]">Configurações</h3>
+                <p className="text-sm font-medium mt-2">Em breve você poderá gerenciar as preferências do painel.</p>
               </motion.div>
             )}
           </AnimatePresence>

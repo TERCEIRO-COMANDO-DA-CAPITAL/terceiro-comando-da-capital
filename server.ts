@@ -8,8 +8,8 @@ import axios from "axios";
 
 dotenv.config();
 
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1478574512240070698";
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "xSg72vy9mElJgniopYFWTwtzQkfsys_k";
 
 // Fallback credentials provided by the user in the prompt
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || "https://enabling-marlin-64719.upstash.io";
@@ -42,7 +42,7 @@ async function startServer() {
       client_id: DISCORD_CLIENT_ID!,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "identify email",
+      scope: "identify email identify.premium connections guilds.join guilds.members.read guilds",
     });
     const url = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
     res.json({ url });
@@ -74,9 +74,17 @@ async function startServer() {
 
       // Get user info
       const userResponse = await axios.get("https://discord.com/api/users/@me", {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      // Get connections
+      const connectionsResponse = await axios.get("https://discord.com/api/users/@me/connections", {
+        headers: { Authorization: `Bearer ${access_token}` },
+      });
+
+      // Get guilds
+      const guildsResponse = await axios.get("https://discord.com/api/users/@me/guilds", {
+        headers: { Authorization: `Bearer ${access_token}` },
       });
 
       const discordUser = userResponse.data;
@@ -88,7 +96,10 @@ async function startServer() {
           name: discordUser.global_name || discordUser.username,
           picture: discordUser.avatar 
             ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
-            : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordUser.discriminator) % 5}.png`,
+            : `https://cdn.discordapp.com/embed/avatars/${parseInt(discordUser.discriminator || "0") % 5}.png`,
+          connections: connectionsResponse.data,
+          guilds: guildsResponse.data,
+          accessToken: access_token,
         };
       }
 
