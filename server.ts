@@ -20,20 +20,30 @@ const redis = new Redis({
   token: REDIS_TOKEN,
 });
 
+// Helper to get a daily rotating secret
+function getDailySecret() {
+  const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const masterSecret = "tcc-painel-master-key-2024";
+  // Simple hash-like string for the day
+  return `${masterSecret}-${date}`;
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
-  app.use(
+  
+  // Session configuration with daily rotating key
+  app.use((req, res, next) => {
     cookieSession({
       name: "session",
-      keys: [process.env.SESSION_SECRET || "default-secret"],
+      keys: [getDailySecret()],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: true,
       sameSite: "none",
-    })
-  );
+    })(req, res, next);
+  });
 
   // Auth Routes
   app.get("/api/auth/url", (req, res) => {
@@ -42,7 +52,7 @@ async function startServer() {
       client_id: DISCORD_CLIENT_ID!,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: "identify email identify.premium connections guilds.join guilds.members.read guilds",
+      scope: "identify email guilds",
     });
     const url = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
     res.json({ url });
