@@ -48,7 +48,11 @@ async function startServer() {
 
   // Auth Routes
   app.get("/api/auth/url", (req, res) => {
-    const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/auth/callback`;
+    const host = req.get('host');
+    const protocol = req.protocol === 'http' && host?.includes('localhost') ? 'http' : 'https';
+    const baseUrl = process.env.APP_URL || (host ? `${protocol}://${host}` : `http://localhost:${PORT}`);
+    const redirectUri = `${baseUrl}/auth/callback`;
+    
     const params = new URLSearchParams({
       client_id: DISCORD_CLIENT_ID!,
       redirect_uri: redirectUri,
@@ -61,7 +65,10 @@ async function startServer() {
 
   app.get("/auth/callback", async (req, res) => {
     const { code } = req.query;
-    const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/auth/callback`;
+    const host = req.get('host');
+    const protocol = req.protocol === 'http' && host?.includes('localhost') ? 'http' : 'https';
+    const baseUrl = process.env.APP_URL || (host ? `${protocol}://${host}` : `http://localhost:${PORT}`);
+    const redirectUri = `${baseUrl}/auth/callback`;
     
     try {
       // Exchange code for token

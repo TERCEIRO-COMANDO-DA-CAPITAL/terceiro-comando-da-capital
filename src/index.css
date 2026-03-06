@@ -11,15 +11,20 @@
 
 body {
   background-color: #000000;
+  background-image: 
+    radial-gradient(circle at 20% 30%, rgba(88, 101, 242, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 0, 128, 0.05) 0%, transparent 40%),
+    url("https://www.transparenttextures.com/patterns/stardust.png");
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   letter-spacing: -0.01em;
+  min-height: 100vh;
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(88, 101, 242, 0.3);
   color: #ffffff;
 }
 
@@ -34,12 +39,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #080808;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #111111;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Custom Scrollbar for specific containers */
@@ -53,12 +58,20 @@ body {
   border: none;
 }
 
-/* Glassmorphism - Amoled Style (No Borders) */
+/* Glassmorphism - Star Wars / Space Style */
 .glass {
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  border: none;
+  background: rgba(5, 5, 5, 0.7);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.glass-gradient {
+  background: linear-gradient(135deg, rgba(88, 101, 242, 0.05) 0%, rgba(255, 0, 128, 0.05) 100%);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Animations */
@@ -68,26 +81,47 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.glow-nebula {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  animation: pulse-glow 10s infinite ease-in-out;
 }
 
 /* Fluxus/Cryptic Style Accents */
 .accent-glow {
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.02);
+  box-shadow: 0 0 40px rgba(88, 101, 242, 0.1);
 }
 
 .discord-btn {
-  background: #ffffff;
-  color: #000000;
-  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(88, 101, 242, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .discord-btn:hover {
-  background: #f0f0f0;
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 40px rgba(88, 101, 242, 0.4);
+  filter: brightness(1.1);
 }
 
 .neon-border-glow {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 20px rgba(88, 101, 242, 0.1);
+}
+
+.card-gradient {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
