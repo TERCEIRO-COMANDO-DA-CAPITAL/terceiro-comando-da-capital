@@ -14,12 +14,19 @@ body {
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbar */
+::selection {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Custom Scrollbar - Ultra Minimal */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 2px;
+  height: 2px;
 }
 
 ::-webkit-scrollbar-track {
@@ -27,20 +34,31 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a1a1a;
-  border-radius: 10px;
+  background: #080808;
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2a;
+  background: #111111;
 }
 
-/* Glassmorphism */
+/* Custom Scrollbar for specific containers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 1px;
+}
+
+/* Amoled Surface */
+.amoled-surface {
+  background: #000000;
+  border: none;
+}
+
+/* Glassmorphism - Amoled Style (No Borders) */
 .glass {
-  background: rgba(10, 10, 10, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: none;
 }
 
 /* Animations */
@@ -50,5 +68,26 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Fluxus/Cryptic Style Accents */
+.accent-glow {
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.02);
+}
+
+.discord-btn {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+}
+
+.discord-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(255, 255, 255, 0.15);
+}
+
+.neon-border-glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
 }
